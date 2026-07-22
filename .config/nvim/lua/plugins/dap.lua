@@ -95,3 +95,7 @@ vim.keymap.set('n', '<leader>du', function()
   load_dap()
   require('dapui').toggle()
 end, { desc = '[D]ebug: Toggle [U]I' })
+
+-- Exposed so other modules (neotest's dap strategy) can trigger the same
+-- one-time load before touching `dap` directly.
+return { load = load_dap }

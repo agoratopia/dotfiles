@@ -40,6 +40,11 @@ local function treesitter_try_attach(buf, language)
   if not vim.treesitter.language.add(language) then return end
   vim.treesitter.start(buf, language)
 
+  -- Treesitter-based folds. Buffers open fully unfolded (see foldlevel* in
+  -- config/options.lua) rather than collapsed by default.
+  vim.wo.foldexpr = 'v:lua.vim.treesitter.foldexpr()'
+  vim.wo.foldmethod = 'expr'
+
   local has_indent_query = vim.treesitter.query.get(language, 'indents') ~= nil
   if has_indent_query then vim.bo.indentexpr = "v:lua.require'nvim-treesitter'.indentexpr()" end
 end

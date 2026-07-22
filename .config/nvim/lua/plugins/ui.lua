@@ -71,7 +71,7 @@ require('which-key').setup {
   icons = { mappings = vim.g.have_nerd_font },
   spec = {
     { '<leader>s', group = '[S]earch', mode = { 'n', 'v' } },
-    { '<leader>t', group = '[T]oggle' },
+    { '<leader>t', group = '[T]oggle / [T]est' },
     { '<leader>h', group = 'Git [H]unk', mode = { 'n', 'v' } },
     { '<leader>g', group = '[G]it' },
     { '<leader>d', group = '[D]ebug' },
@@ -129,4 +129,47 @@ vim.api.nvim_create_autocmd('FileType', {
   desc = 'Disable indent scope guide in non-code buffers',
   pattern = { 'help', 'dashboard', 'lazy', 'mason', 'oil', 'checkhealth' },
   callback = function() vim.b.miniindentscope_disable = true end,
+})
+
+-- Nicer, non-blocking notification popups (replaces plain vim.notify)
+require('mini.notify').setup()
+vim.notify = require('mini.notify').make_notify()
+
+-- Auto save/restore a per-directory session (only when nvim is opened with
+-- no file arguments, e.g. `cd myproject && nvim`, and nothing else is
+-- already open). The resulting local Session.vim is kept out of git via
+-- the global gitignore.
+--
+-- NOTE: built-in autoread/autowrite are intentionally off — autoread's
+-- VimEnter hook didn't fire reliably, and autowrite only re-saves a
+-- session that was already read/written this run (so a brand-new
+-- directory never gets bootstrapped). Both are replicated manually below.
+require('mini.sessions').setup {
+  autoread = false,
+  autowrite = false,
+}
+
+local function nothing_shown_yet()
+  if vim.fn.argc() > 0 then return false end
+  if #vim.api.nvim_list_bufs() > 1 then return false end
+  local buf = vim.api.nvim_get_current_buf()
+  if vim.bo[buf].filetype ~= '' then return false end
+  local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, true)
+  return #lines <= 1 and (lines[1] or '') == ''
+end
+
+vim.api.nvim_create_autocmd('VimEnter', {
+  desc = 'Restore a local session, if one exists and nothing else is already shown',
+  once = true,
+  nested = true,
+  callback = function()
+    if nothing_shown_yet() then pcall(require('mini.sessions').read, 'Session.vim') end
+  end,
+})
+
+vim.api.nvim_create_autocmd('VimLeavePre', {
+  desc = 'Always write a local session on quit, if nvim was opened without file args',
+  callback = function()
+    if vim.fn.argc() == 0 then pcall(require('mini.sessions').write, 'Session.vim', { force = true }) end
+  end,
 })
