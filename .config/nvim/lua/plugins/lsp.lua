@@ -56,8 +56,16 @@ vim.api.nvim_create_autocmd('LspAttach', {
 local servers = {
   stylua = {}, -- Used to format Lua code
 
-  gopls = {},
-  rust_analyzer = {},
+  -- rust_analyzer is intentionally absent: rustaceanvim (plugins/rustaceanvim.lua)
+  -- owns the Rust LSP client instead of plain lspconfig.
+  gopls = {
+    settings = {
+      gopls = {
+        gofumpt = true,
+        staticcheck = true,
+      },
+    },
+  },
   basedpyright = {},
   ruff = {}, -- Lint diagnostics + organize-imports code action (formatting handled by conform)
   marksman = {}, -- Markdown
@@ -116,6 +124,7 @@ vim.list_extend(ensure_installed, {
   'goimports',
   'gofumpt',
   'yamlfmt',
+  'rust-analyzer', -- installed via Mason for rustaceanvim to auto-detect
 })
 
 require('mason-tool-installer').setup { ensure_installed = ensure_installed }

@@ -64,3 +64,13 @@ vim.o.scrolloff = 10
 -- if performing an operation that would fail due to unsaved changes in the buffer (like `:q`),
 -- instead raise a dialog asking if you wish to save the current file(s)
 vim.o.confirm = true
+
+-- Open buffers fully unfolded by default (treesitter folding is enabled per-buffer
+-- in plugins/treesitter.lua; without this every file would open fully collapsed)
+vim.o.foldlevel = 99
+vim.o.foldlevelstart = 99
+
+-- Combined gutter: signs (git/diagnostics) + line number + fold indicator,
+-- instead of a separate signcolumn.
+vim.o.foldcolumn = '1'
+vim.o.statuscolumn = '%s%=%l %C'
