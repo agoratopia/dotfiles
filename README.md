@@ -5,7 +5,7 @@ Managed as a bare git repo checked out against `$HOME`, rather than symlinks.
 ## Setup on a new machine
 
 ```sh
-git clone --bare git@github.com:agoratopia/dotfiles.git "$HOME/.dotfiles"
+git clone --bare https://github.com/agoratopia/dotfiles.git "$HOME/.dotfiles"
 alias dotfiles='/usr/bin/git --git-dir=$HOME/.dotfiles --work-tree=$HOME'
 dotfiles checkout
 dotfiles config --local status.showUntrackedFiles no
