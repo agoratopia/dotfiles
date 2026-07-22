@@ -14,13 +14,12 @@ programs that use them expect to find them.
 | `.config/starship.toml` | Shell prompt, kanagawa-dragon colors |
 | `Library/Application Support/com.mitchellh.ghostty/config.ghostty` | Terminal config — kanagawa-dragon theme |
 | `.dotfiles-ignore` | Safety net, see below |
+| `.config/dotfiles/Brewfile` | Every Homebrew formula/cask this environment needs |
+| `.config/dotfiles/bootstrap.sh` | Sets up a fresh machine end to end, see below |
 
 Theme is kanagawa-dragon end to end — Ghostty, Neovim, and starship all match.
 
-Not tracked here: Homebrew packages (network/security tooling, PowerShell
-modules, etc.) are installed but not dotfiles-managed — see
-`brew leaves`/`brew list` for what's on this machine. MSP tooling notes
-live in Obsidian, not this repo.
+Not tracked here: MSP tooling notes live in Obsidian, not this repo.
 
 ## Setup on a new machine
 
@@ -39,11 +38,20 @@ dotfiles checkout 2>&1 | grep -E "^\s+" | awk '{print $1}' | xargs -I{} mv {} ~/
 dotfiles checkout
 ```
 
-Then install Homebrew and everything referenced above (neovim, starship,
-eza, bat, zoxide, fzf, ripgrep, fd, tree-sitter-cli, node, go, rustup,
-git-delta, the zsh completion/suggestion/highlighting formulae, Ghostty,
-Iosevka Nerd Font) — there's no single bootstrap script for this yet, it's
-built up incrementally.
+Then run the bootstrap script — installs Xcode CLT/Homebrew if missing,
+every formula/cask in `Brewfile`, sets rustup's default toolchain, fetches
+nuclei's templates, and installs the M365/Exchange Online PowerShell
+modules. Safe to re-run; every step is idempotent:
+
+```sh
+~/.config/dotfiles/bootstrap.sh
+```
+
+A few things genuinely can't be scripted and the script will tell you about
+them at the end: Wireshark's packet-capture permission (ChmodBPF needs an
+admin password prompt), Ghostty's quick-terminal hotkey (needs Accessibility
+permission granted in System Settings), and `bw login` for Bitwarden (your
+actual master password, not something to automate).
 
 ## Usage
 
