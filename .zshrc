@@ -1,3 +1,4 @@
+# --- PATH ---
 export PATH="$HOME/.local/bin:$PATH"
 export PATH="/opt/homebrew/opt/rustup/bin:$PATH"
 
@@ -14,6 +15,7 @@ setopt HIST_REDUCE_BLANKS
 setopt HIST_VERIFY         # show history expansions (e.g. !!) before running them
 setopt EXTENDED_HISTORY    # store timestamp + duration per entry
 
+# --- Aliases ---
 alias dotfiles='/usr/bin/git --git-dir=$HOME/.dotfiles --work-tree=$HOME'
 
 # Modern CLI replacements — same commands, better output, no new muscle memory
@@ -24,6 +26,7 @@ alias cat='bat --paging=never --style=plain'
 # that are gitignored/hidden.
 alias grep='rg'
 
+# --- Tool integrations ---
 # man stays man, just renders through bat for syntax highlighting/paging
 export MANPAGER="sh -c 'col -bx | bat -l man -p'"
 

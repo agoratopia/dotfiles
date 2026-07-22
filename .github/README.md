@@ -57,9 +57,15 @@ dotfiles push
 ```
 
 This prevents an accidental `dotfiles add .` from sweeping in your entire
-home directory. It's also why this `README.md` is the *only* plain
-(non-hidden) file sitting in `$HOME` — everything else tracked here is a
-dotfile or lives under `.config`/`Library`. GitHub only auto-renders a
-`README.md` sitting at the actual repo root, which for a bare repo checked
-out against `$HOME` means `$HOME` itself — hence it living here rather than
-tucked into a subfolder.
+home directory.
+
+## Why this file lives in `.github/`
+
+For a bare repo checked out against `$HOME`, the actual repo root *is*
+`$HOME` — so a plain `README.md` at the root would mean a visible,
+non-hidden file sitting in your home directory, which this whole setup is
+built to avoid. GitHub happens to check `.github/README.md` *before* the
+repo root when deciding what to render on the landing page, so the real
+content lives at `.github/README.md` instead — a hidden directory, same as
+every other dotfile here, but GitHub still renders it exactly the same way
+it would a root-level README.
