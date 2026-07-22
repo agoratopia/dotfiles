@@ -75,6 +75,7 @@ require('which-key').setup {
     { '<leader>h', group = 'Git [H]unk', mode = { 'n', 'v' } },
     { '<leader>g', group = '[G]it' },
     { '<leader>d', group = '[D]ebug' },
+    { '<leader>x', group = 'Trouble' },
     { 'gr', group = 'LSP Actions', mode = { 'n' } },
   },
 }

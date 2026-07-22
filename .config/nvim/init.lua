@@ -14,5 +14,8 @@ require 'plugins.treesitter'
 require 'plugins.markdown'
 require 'plugins.diffview'
 require 'plugins.dap'
+require 'plugins.flash'
+require 'plugins.trouble'
+require 'plugins.bufferline'
 
 -- vim: ts=2 sts=2 sw=2 et
