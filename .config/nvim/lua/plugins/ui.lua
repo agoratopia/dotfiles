@@ -158,19 +158,55 @@ local function nothing_shown_yet()
   return #lines <= 1 and (lines[1] or '') == ''
 end
 
+-- Never drop a Session.vim directly in $HOME itself — that's not a project,
+-- and this is exactly the kind of home-directory clutter to avoid.
+local function in_a_project_dir() return vim.fn.getcwd() ~= vim.fn.expand '~' end
+
 vim.api.nvim_create_autocmd('VimEnter', {
   desc = 'Restore a local session, if one exists and nothing else is already shown',
   once = true,
   nested = true,
   callback = function()
     local sessions = require('mini.sessions').detected
-    if sessions['Session.vim'] and nothing_shown_yet() then pcall(require('mini.sessions').read, 'Session.vim') end
+    if sessions['Session.vim'] and in_a_project_dir() and nothing_shown_yet() then
+      pcall(require('mini.sessions').read, 'Session.vim')
+    end
   end,
 })
 
 vim.api.nvim_create_autocmd('VimLeavePre', {
   desc = 'Always write a local session on quit, if nvim was opened without file args',
   callback = function()
-    if vim.fn.argc() == 0 then pcall(require('mini.sessions').write, 'Session.vim', { force = true }) end
+    if vim.fn.argc() == 0 and in_a_project_dir() then pcall(require('mini.sessions').write, 'Session.vim', { force = true }) end
   end,
 })
+
+-- Splash screen when opening nvim with no file args. Registered after the
+-- session-restore autocmd above so a restored session (which populates real
+-- buffers/windows) correctly wins — mini.starter re-checks "is anything
+-- already shown" itself at VimEnter time and no-ops if so.
+local starter = require 'mini.starter'
+local starter_items = {
+  { name = 'Find file', action = 'Telescope find_files', section = '' },
+  { name = 'Recent files', action = 'Telescope oldfiles', section = '' },
+  { name = 'Live grep', action = 'Telescope live_grep', section = '' },
+  { name = 'New file', action = 'enew', section = '' },
+  { name = 'Quit', action = 'qa', section = '' },
+}
+if require('mini.sessions').detected['Session.vim'] then
+  table.insert(starter_items, 4, {
+    name = 'Restore session',
+    action = "lua require('mini.sessions').read('Session.vim')",
+    section = '',
+  })
+end
+starter.setup {
+  evaluate_single = true,
+  items = starter_items,
+  header = '',
+  footer = '',
+  content_hooks = {
+    starter.gen_hook.adding_bullet(),
+    starter.gen_hook.aligning('center', 'center'),
+  },
+}
