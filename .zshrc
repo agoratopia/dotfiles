@@ -24,6 +24,9 @@ alias cat='bat --paging=never --style=plain'
 # that are gitignored/hidden.
 alias grep='rg'
 
+# man stays man, just renders through bat for syntax highlighting/paging
+export MANPAGER="sh -c 'col -bx | bat -l man -p'"
+
 eval "$(zoxide init zsh --cmd cd)"  # cd gains fuzzy jump-to-frecent-dir, falls through to real cd for literal paths
 eval "$(fzf --zsh)"                 # enhances existing Ctrl+R (history) / Ctrl+T (file) keybindings
 
