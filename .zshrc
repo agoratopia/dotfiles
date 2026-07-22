@@ -27,6 +27,16 @@ alias grep='rg'
 # man stays man, just renders through bat for syntax highlighting/paging
 export MANPAGER="sh -c 'col -bx | bat -l man -p'"
 
+# lynis hardcodes lynis.log/lynis-report.dat into $HOME when not run as root
+# (no CLI flag to redirect this) — same command, just auto-tidied afterward.
+lynis() {
+  command lynis "$@"
+  local dest="$HOME/.local/share/lynis"
+  mkdir -p "$dest"
+  [[ -f "$HOME/lynis.log" ]] && mv "$HOME/lynis.log" "$dest/"
+  [[ -f "$HOME/lynis-report.dat" ]] && mv "$HOME/lynis-report.dat" "$dest/"
+}
+
 eval "$(zoxide init zsh --cmd cd)"  # cd gains fuzzy jump-to-frecent-dir, falls through to real cd for literal paths
 eval "$(fzf --zsh)"                 # enhances existing Ctrl+R (history) / Ctrl+T (file) keybindings
 
