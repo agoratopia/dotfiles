@@ -1,0 +1,60 @@
+# Homebrew bundle for this machine's dev environment.
+# Install everything at once with: brew bundle install --file=~/.config/dotfiles/Brewfile
+# (bootstrap.sh in this same directory does this as part of full setup)
+
+# --- Neovim ---
+brew "neovim"
+brew "ripgrep"
+brew "fd"
+brew "tree-sitter-cli"
+brew "go"
+brew "rustup"
+cask "font-iosevka-nerd-font"
+
+# --- Terminal ---
+cask "ghostty"
+brew "starship"
+brew "eza"
+brew "bat"
+brew "zoxide"
+brew "fzf"
+
+# --- Shell completion / suggestions / highlighting ---
+brew "zsh-completions"
+brew "zsh-autosuggestions"
+brew "zsh-syntax-highlighting"
+
+# --- Git ---
+brew "git-delta"
+brew "gh"
+
+# --- Network / security tooling (defensive/diagnostic baseline) ---
+brew "nmap"
+brew "mtr"
+brew "arp-scan"
+brew "iperf3"
+brew "wireshark"       # CLI/tshark build
+cask "wireshark-app"   # GUI + ChmodBPF (needs an admin-password prompt, see bootstrap.sh)
+brew "nikto"
+brew "testssl"
+brew "lynis"
+brew "nuclei"
+brew "lnav"
+brew "visidata"
+brew "jq"
+brew "yq"
+
+# --- Credentials & reporting ---
+brew "bitwarden-cli"
+brew "pandoc"
+brew "tectonic"        # PDF engine for pandoc
+
+# --- Cloud sync & terminal markdown ---
+brew "rclone"
+brew "glow"
+
+# --- Microsoft 365 / Exchange Online (PowerShell) ---
+brew "powershell"
+
+# --- Apps ---
+cask "obsidian"
