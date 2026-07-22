@@ -18,8 +18,7 @@ local parsers = {
   'gosum',
   'gowork',
   'html',
-  'json',
-  'jsonc',
+  'json', -- also covers jsonc: vim.treesitter.language.get_lang('jsonc') resolves to 'json'
   'lua',
   'luadoc',
   'markdown',
