@@ -12,5 +12,7 @@ require 'plugins.format'
 require 'plugins.completion'
 require 'plugins.treesitter'
 require 'plugins.markdown'
+require 'plugins.diffview'
+require 'plugins.dap'
 
 -- vim: ts=2 sts=2 sw=2 et
