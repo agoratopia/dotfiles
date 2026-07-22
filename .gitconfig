@@ -3,3 +3,9 @@
 	name = agoratopia
 [core]
 	excludesFile = /Users/zac/.config/git/ignore
+	pager = delta
+[interactive]
+	diffFilter = delta --color-only
+[delta]
+	navigate = true
+	line-numbers = true
