@@ -1,11 +1,28 @@
 export PATH="$HOME/.local/bin:$PATH"
 export PATH="/opt/homebrew/opt/rustup/bin:$PATH"
 
+# --- History ---
+HISTFILE="$HOME/.zsh_history"
+HISTSIZE=50000
+SAVEHIST=50000
+setopt SHARE_HISTORY       # live-share history across all open sessions/tabs
+setopt APPEND_HISTORY
+setopt HIST_IGNORE_DUPS    # don't record a line that repeats the previous one
+setopt HIST_IGNORE_ALL_DUPS # keep only the most recent occurrence of a duplicate
+setopt HIST_IGNORE_SPACE   # lines starting with a space aren't recorded (secrets/tokens)
+setopt HIST_REDUCE_BLANKS
+setopt HIST_VERIFY         # show history expansions (e.g. !!) before running them
+setopt EXTENDED_HISTORY    # store timestamp + duration per entry
+
 alias dotfiles='/usr/bin/git --git-dir=$HOME/.dotfiles --work-tree=$HOME'
 
 # Modern CLI replacements — same commands, better output, no new muscle memory
 alias ls='eza --icons --group-directories-first'
 alias cat='bat --paging=never --style=plain'
+# NOTE: ripgrep recurses and respects .gitignore by default, unlike grep —
+# usually what you want, but worth knowing if a search seems to "miss" files
+# that are gitignored/hidden.
+alias grep='rg'
 
 eval "$(zoxide init zsh --cmd cd)"  # cd gains fuzzy jump-to-frecent-dir, falls through to real cd for literal paths
 eval "$(fzf --zsh)"                 # enhances existing Ctrl+R (history) / Ctrl+T (file) keybindings
