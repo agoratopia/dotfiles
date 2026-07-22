@@ -163,7 +163,8 @@ vim.api.nvim_create_autocmd('VimEnter', {
   once = true,
   nested = true,
   callback = function()
-    if nothing_shown_yet() then pcall(require('mini.sessions').read, 'Session.vim') end
+    local sessions = require('mini.sessions').detected
+    if sessions['Session.vim'] and nothing_shown_yet() then pcall(require('mini.sessions').read, 'Session.vim') end
   end,
 })
 
