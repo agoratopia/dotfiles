@@ -205,6 +205,7 @@ starter.setup {
   items = starter_items,
   header = '',
   footer = '',
+  silent = true, -- suppress the "Query: ..." feedback echoed while typing to filter items
   content_hooks = {
     starter.gen_hook.adding_bullet(),
     starter.gen_hook.aligning('center', 'center'),
