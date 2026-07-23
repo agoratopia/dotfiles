@@ -1,11 +1,6 @@
-font-family = Iosevka Nerd Font
-font-style = Medium
-font-size = 15
-theme = Kanagawa Dragon
-window-padding-x = 10
-window-padding-y = 8
-
-# Global hotkey for a drop-down quick terminal. Requires Accessibility
-# permission to be granted to Ghostty (System Settings > Privacy & Security
-# > Accessibility) — Ghostty will prompt for this on next launch/reload.
-keybind = global:cmd+alt+grave_accent=toggle_quick_terminal
+# Ghostty only reads config from this exact macOS-bundle-ID path — it does
+# not honor ~/.config/ghostty/config (XDG_CONFIG_HOME), confirmed by testing
+# directly. Rather than track real config content at this awkward path, this
+# is just a redirect stub; the actual config lives at ~/.config/ghostty/config
+# alongside every other tool's config in this repo.
+config-file = ?~/.config/ghostty/config

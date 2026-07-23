@@ -12,7 +12,7 @@ programs that use them expect to find them.
 | `.gitconfig`, `.config/git/ignore` | Git config — delta as the diff/show pager, global excludes |
 | `.config/nvim/` | Neovim config — kickstart.nvim baseline, modular (`lua/config/`, `lua/plugins/`), native `vim.pack` (not lazy.nvim) |
 | `.config/starship.toml` | Shell prompt, kanagawa-dragon colors |
-| `Library/Application Support/com.mitchellh.ghostty/config.ghostty` | Terminal config — kanagawa-dragon theme |
+| `.config/ghostty/config` | Terminal config — kanagawa-dragon theme (see note below on why there's also a stub file) |
 | `.dotfiles-ignore` | Safety net, see below |
 | `.config/dotfiles/Brewfile` | Every Homebrew formula/cask this environment needs |
 | `.config/dotfiles/bootstrap.sh` | Sets up a fresh machine end to end, see below |
@@ -66,6 +66,17 @@ dotfiles push
 
 This prevents an accidental `dotfiles add .` from sweeping in your entire
 home directory.
+
+## Why there's a stub at `Library/Application Support/com.mitchellh.ghostty/`
+
+Ghostty only reads its config from that exact macOS-bundle-ID path — it
+does not honor `~/.config/ghostty/config` (XDG_CONFIG_HOME), confirmed by
+testing directly. Rather than track the real config at that awkward path,
+`Library/Application Support/com.mitchellh.ghostty/config.ghostty` is just
+a one-line redirect (`config-file = ?~/.config/ghostty/config`) — no
+symlink, just Ghostty's own built-in config-include directive. The actual
+content lives at `.config/ghostty/config`, same convention as everything
+else here.
 
 ## Why this file lives in `.github/`
 
