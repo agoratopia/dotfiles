@@ -9,7 +9,7 @@ programs that use them expect to find them.
 | Path | What it is |
 |---|---|
 | `.zshrc`, `.zprofile` | Shell config: history, completion system (compinit, fzf-tab, autosuggestions, syntax highlighting), starship prompt, modern CLI replacements aliased over familiar commands (`ls`→eza, `cat`→bat, `cd`→zoxide-enhanced, `grep`→rg), man pages piped through bat |
-| `.gitconfig`, `.config/git/ignore` | Git config — delta as the diff/show pager, global excludes |
+| `.gitconfig`, `.config/git/ignore` | Git config — delta as the diff/show pager, global excludes, and an include of an untracked local file (see below) |
 | `.config/nvim/` | Neovim config — kickstart.nvim baseline, modular (`lua/config/`, `lua/plugins/`), native `vim.pack` (not lazy.nvim) |
 | `.config/starship.toml` | Shell prompt, kanagawa-dragon colors |
 | `.config/ghostty/config` | Terminal config — kanagawa-dragon theme (see note below on why there's also a stub file) |
@@ -66,6 +66,24 @@ dotfiles push
 
 This prevents an accidental `dotfiles add .` from sweeping in your entire
 home directory.
+
+## Keeping private settings out of a public `.gitconfig`
+
+`.gitconfig` is tracked here, so anything written into it is published. The
+identity in it (`agoratopia` and a GitHub noreply address) is deliberately
+public — but `git config --global ...` writes to that same file, and since
+it's already tracked, a stray `commit -a` would sweep the change in.
+
+So the last thing `.gitconfig` does is include an untracked file:
+
+```ini
+[include]
+	path = ~/.config/git/local
+```
+
+Git skips the include silently if the file is absent, and values there
+override everything above it. Work identity, signing keys, and per-client
+`includeIf` rules go there and never reach the repo.
 
 ## Why there's a stub at `Library/Application Support/com.mitchellh.ghostty/`
 

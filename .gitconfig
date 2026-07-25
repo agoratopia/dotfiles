@@ -9,3 +9,9 @@
 [delta]
 	navigate = true
 	line-numbers = true
+# Machine-specific and private settings (work identity, signing keys) go in
+# the included file, which is deliberately untracked — this file is public.
+# Git ignores the include silently if the file doesn't exist, and values
+# there override everything above.
+[include]
+	path = ~/.config/git/local
