@@ -1,6 +1,15 @@
 # --- PATH ---
+# ~/.local/bin also holds the fd/bat shims bootstrap.sh creates on Debian and
+# Ubuntu, where those binaries ship under different names (see bootstrap.sh).
 export PATH="$HOME/.local/bin:$PATH"
-export PATH="/opt/homebrew/opt/rustup/bin:$PATH"
+
+# Rust toolchain. Homebrew's rustup keeps its shims in the formula's own opt
+# directory; a rustup.rs install — the usual route on Linux — uses ~/.cargo/bin.
+# Listed lowest-priority first, since each match is prepended.
+for _d in "$HOME/.cargo/bin" /usr/local/opt/rustup/bin /opt/homebrew/opt/rustup/bin; do
+  [[ -d $_d ]] && export PATH="$_d:$PATH"
+done
+unset _d
 
 # --- History ---
 HISTFILE="$HOME/.zsh_history"
@@ -46,12 +55,59 @@ lynis() {
 }
 
 (( $+commands[zoxide] )) && eval "$(zoxide init zsh --cmd cd)"  # cd gains fuzzy jump-to-frecent-dir, falls through to real cd for literal paths
-(( $+commands[fzf] ))    && eval "$(fzf --zsh)"                 # enhances existing Ctrl+R (history) / Ctrl+T (file) keybindings
+
+# fzf's Ctrl+R (history) / Ctrl+T (file) bindings. `fzf --zsh` only exists in
+# fzf >= 0.48; older distro builds (Ubuntu 24.04 ships 0.44) ship the same
+# scripts on disk instead, in a spot that varies by packager.
+if (( $+commands[fzf] )); then
+  if _fzf_init=$(fzf --zsh 2>/dev/null); then
+    eval "$_fzf_init"
+  else
+    for _d in /usr/share/doc/fzf/examples /usr/share/fzf /usr/share/fzf/shell; do
+      [[ -r $_d/key-bindings.zsh ]] && source "$_d/key-bindings.zsh"
+      [[ -r $_d/completion.zsh ]]   && source "$_d/completion.zsh"
+    done
+    unset _d
+  fi
+  unset _fzf_init
+fi
 
 # --- Completion system ---
+# Where zsh add-ons live depends entirely on the packager: Homebrew (Apple
+# Silicon, Intel, or Linuxbrew) uses <prefix>/share/<name>, Debian/Ubuntu use
+# /usr/share/<name>, Arch uses /usr/share/zsh/plugins/<name>. Probe them all
+# rather than hardcoding one platform's layout.
+_zsh_share_dirs=(
+  /opt/homebrew/share
+  /usr/local/share
+  /home/linuxbrew/.linuxbrew/share
+  "$HOME/.linuxbrew/share"
+  /usr/share
+  /usr/share/zsh/plugins
+)
+
+# Sources the first readable match; silently does nothing if the plugin isn't
+# installed, so a half-provisioned machine still gets a working shell.
+_source_zsh_plugin() {
+  local name=$1 file=$2 d
+  for d in $_zsh_share_dirs; do
+    if [[ -r $d/$name/$file ]]; then
+      source "$d/$name/$file"
+      return 0
+    fi
+  done
+  return 1
+}
+
 # zsh-completions adds definitions beyond what's already in fpath; must be
 # added before compinit runs.
-[[ -d /opt/homebrew/share/zsh-completions ]] && fpath=(/opt/homebrew/share/zsh-completions $fpath)
+for _d in $_zsh_share_dirs; do
+  [[ -d $_d/zsh-completions/src ]] && { fpath=($_d/zsh-completions/src $fpath); break }
+  [[ -d $_d/zsh-completions ]]     && { fpath=($_d/zsh-completions $fpath); break }
+done
+# Debian and Ubuntu drop extra completions here instead of a named directory.
+[[ -d /usr/share/zsh/vendor-completions ]] && fpath=(/usr/share/zsh/vendor-completions $fpath)
+unset _d
 
 # Cached compinit: only re-scan fpath and re-verify security once every 24h,
 # instead of on every single new shell/tab.
@@ -94,12 +150,13 @@ fi
 [[ -r "$FZF_TAB_DIR/fzf-tab.plugin.zsh" ]] && source "$FZF_TAB_DIR/fzf-tab.plugin.zsh"
 
 # Inline history-based suggestions (accept with → or End)
-[[ -r /opt/homebrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh ]] &&
-  source /opt/homebrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh
+_source_zsh_plugin zsh-autosuggestions zsh-autosuggestions.zsh
 
 (( $+commands[starship] )) && eval "$(starship init zsh)"
 
 # Syntax highlighting while typing — must be sourced last, after every other
 # widget-wrapping plugin above.
-[[ -r /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ]] &&
-  source /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+_source_zsh_plugin zsh-syntax-highlighting zsh-syntax-highlighting.zsh
+
+unset _zsh_share_dirs
+unfunction _source_zsh_plugin

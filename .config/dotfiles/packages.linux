@@ -1,0 +1,68 @@
+# Linux package manifest — the counterpart to Brewfile on macOS.
+#
+# Columns: logical-name  apt  dnf  pacman
+#   "-" means that package manager has no usable package for it. Anything
+#   marked "-" is either installed a different way by bootstrap.sh (rustup,
+#   starship, nuclei, glow, bitwarden-cli, powershell) or simply skipped with
+#   a note at the end of the run. Nothing here fails the bootstrap.
+#
+# Package names genuinely differ between distros — this table exists because
+# fd is fd-find on Debian, mtr is mtr-tiny, tshark is wireshark-cli on
+# Fedora/Arch, and gh is github-cli on Arch. Verified by running bootstrap.sh
+# in real ubuntu/debian/fedora/arch containers.
+
+# --- Core: the shell itself and what the dotfiles assume exists ---
+zsh                     zsh                 zsh                 zsh
+git                     git                 git                 git
+curl                    curl                curl                curl
+unzip                   unzip               unzip               unzip
+tar                     tar                 tar                 tar
+
+# --- Neovim and what Mason needs to build/install language servers ---
+# Note: neovim itself is deliberately NOT listed here. This config uses
+# vim.pack, which needs Neovim 0.12+, and distro packages lag badly (Ubuntu
+# 24.04 ships 0.9.5). bootstrap.sh installs the official release tarball.
+ripgrep                 ripgrep             ripgrep             ripgrep
+fd                      fd-find             fd-find             fd
+go                      golang-go           golang              go
+# Fedora has no plain "nodejs"/"npm" — only versioned streams, and which
+# streams exist changes each release. Alternatives are tried left to right.
+nodejs                  nodejs              nodejs24|nodejs22|nodejs    nodejs
+npm                     npm                 nodejs24-npm|nodejs22-npm|npm  npm
+python3                 python3             python3             python
+python3-venv            python3-venv        python3             python
+python3-pip             python3-pip         python3-pip         python-pip
+cc                      build-essential     gcc                 base-devel
+
+# --- Clipboard providers so nvim's unnamedplus actually works ---
+xclip                   xclip               xclip               xclip
+wl-clipboard            wl-clipboard        wl-clipboard        wl-clipboard
+
+# --- Terminal niceties ---
+bat                     bat                 bat                 bat
+eza                     eza                 eza                 eza
+zoxide                  zoxide              zoxide              zoxide
+fzf                     fzf                 fzf                 fzf
+zsh-autosuggestions     zsh-autosuggestions zsh-autosuggestions zsh-autosuggestions
+zsh-syntax-highlighting zsh-syntax-highlighting zsh-syntax-highlighting zsh-syntax-highlighting
+
+# --- Git ---
+git-delta               git-delta           git-delta           git-delta
+gh                      gh                  gh                  github-cli
+
+# --- Network / security tooling ---
+nmap                    nmap                nmap                nmap
+mtr                     mtr-tiny            mtr                 mtr
+arp-scan                arp-scan            arp-scan            -
+iperf3                  iperf3              iperf3              iperf3
+tshark                  tshark              wireshark-cli       wireshark-cli
+nikto                   nikto               -                   -
+lynis                   lynis               lynis               lynis
+lnav                    lnav                lnav                lnav
+visidata                visidata            -                   -
+jq                      jq                  jq                  jq
+yq                      -                   -                   go-yq
+
+# --- Reporting ---
+pandoc                  pandoc              pandoc-cli|pandoc   pandoc-cli|pandoc
+rclone                  rclone              rclone              rclone
