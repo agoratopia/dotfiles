@@ -3,8 +3,8 @@ vim.loader.enable()
 
 -- Set <space> as the leader key
 --  NOTE: Must happen before plugins are loaded (otherwise wrong leader will be used)
-vim.g.mapleader = ' '
-vim.g.maplocalleader = ' '
+vim.g.mapleader = " "
+vim.g.maplocalleader = " "
 
 -- Iosevka Nerd Font is installed and set in Ghostty
 vim.g.have_nerd_font = true
@@ -16,18 +16,20 @@ vim.g.have_nerd_font = true
 vim.o.number = true
 
 -- Enable mouse mode, can be useful for resizing splits for example!
-vim.o.mouse = 'a'
+vim.o.mouse = "a"
 
 -- Don't show the mode, since it's already in the status line
 vim.o.showmode = false
 
 -- Suppress Neovim's own built-in startup intro screen — opening with no
 -- args should just be a plain empty buffer.
-vim.opt.shortmess:append 'I'
+vim.opt.shortmess:append("I")
 
 -- Sync clipboard between OS and Neovim.
 --  Schedule the setting after `UiEnter` because it can increase startup-time.
-vim.schedule(function() vim.o.clipboard = 'unnamedplus' end)
+vim.schedule(function()
+	vim.o.clipboard = "unnamedplus"
+end)
 
 -- A server reached over SSH has no X11 or Wayland for `unnamedplus` to talk to,
 -- so yanking would silently do nothing. OSC 52 pushes the copy through the
@@ -41,13 +43,13 @@ vim.schedule(function() vim.o.clipboard = 'unnamedplus' end)
 -- Copy works everywhere; paste needs the terminal to answer an OSC 52 query,
 -- which many refuse to do for good security reasons. Use `"+p` if it works,
 -- and ordinary terminal paste if not.
-if require('config.profile').server then
-  local osc52 = require 'vim.ui.clipboard.osc52'
-  vim.g.clipboard = {
-    name = 'OSC 52',
-    copy = { ['+'] = osc52.copy '+', ['*'] = osc52.copy '*' },
-    paste = { ['+'] = osc52.paste '+', ['*'] = osc52.paste '*' },
-  }
+if require("config.profile").server then
+	local osc52 = require("vim.ui.clipboard.osc52")
+	vim.g.clipboard = {
+		name = "OSC 52",
+		copy = { ["+"] = osc52.copy("+"), ["*"] = osc52.copy("*") },
+		paste = { ["+"] = osc52.paste("+"), ["*"] = osc52.paste("*") },
+	}
 end
 
 -- Enable break indent
@@ -61,7 +63,7 @@ vim.o.ignorecase = true
 vim.o.smartcase = true
 
 -- Keep signcolumn on by default
-vim.o.signcolumn = 'yes'
+vim.o.signcolumn = "yes"
 
 -- Decrease update time
 vim.o.updatetime = 250
@@ -75,10 +77,10 @@ vim.o.splitbelow = true
 
 -- Sets how neovim will display certain whitespace characters in the editor.
 vim.o.list = true
-vim.opt.listchars = { tab = '» ', trail = '·', nbsp = '␣' }
+vim.opt.listchars = { tab = "» ", trail = "·", nbsp = "␣" }
 
 -- Preview substitutions live, as you type!
-vim.o.inccommand = 'split'
+vim.o.inccommand = "split"
 
 -- Show which line your cursor is on
 vim.o.cursorline = true
@@ -97,5 +99,5 @@ vim.o.foldlevelstart = 99
 
 -- Combined gutter: signs (git/diagnostics) + line number + fold indicator,
 -- instead of a separate signcolumn.
-vim.o.foldcolumn = '1'
-vim.o.statuscolumn = '%s%=%l %C'
+vim.o.foldcolumn = "1"
+vim.o.statuscolumn = "%s%=%l %C"

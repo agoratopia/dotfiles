@@ -1,0 +1,15 @@
+# stylua's own defaults, written down explicitly.
+#
+# Not pinning these is what caused the problem this replaces: with no config
+# file stylua falls back to built-in defaults, which are free to change between
+# releases — and a changed default silently reformats every Lua file here the
+# next time one is saved. conform runs stylua on save (see lua/plugins/format.lua),
+# so that reformat lands mixed into whatever real edit you were making.
+
+column_width = 120
+line_endings = "Unix"
+indent_type = "Tabs"
+indent_width = 4
+quote_style = "AutoPreferDouble"
+call_parentheses = "Always"
+collapse_simple_statement = "Never"

@@ -20,5 +20,5 @@
 --     that isn't yours.
 
 return {
-  server = vim.env.NVIM_PROFILE == 'server',
+	server = vim.env.NVIM_PROFILE == "server",
 }
