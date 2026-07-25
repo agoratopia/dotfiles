@@ -48,14 +48,23 @@ eval "$(fzf --zsh)"                 # enhances existing Ctrl+R (history) / Ctrl+
 # added before compinit runs.
 fpath=(/opt/homebrew/share/zsh-completions $fpath)
 
-# Cached compinit: only re-scans fpath and re-verifies security once every
-# 24h, instead of on every single new shell/tab.
+# Cached compinit: only re-scan fpath and re-verify security once every 24h,
+# instead of on every single new shell/tab.
+#
+# The (#q...) glob qualifier needs EXTENDED_GLOB, which zsh does not enable by
+# default. Without it the test never matches, the cached branch is unreachable,
+# and every shell silently pays the full ~150ms rescan. Enabled only for the
+# test and restored right after, so # ^ ~ keep their normal meaning in globs.
 autoload -Uz compinit
-if [[ -n ${ZDOTDIR:-$HOME}/.zcompdump(#qN.mh+24) ]]; then
-  compinit
+setopt EXTENDED_GLOB
+_zcompdump_fresh=( ${ZDOTDIR:-$HOME}/.zcompdump(#qN.mh-24) )
+unsetopt EXTENDED_GLOB
+if (( ${#_zcompdump_fresh} )); then
+  compinit -C   # dump is under 24h old — trust it, skip the rescan
 else
-  compinit -C
+  compinit      # missing or stale — full rescan + fpath security check
 fi
+unset _zcompdump_fresh
 
 # fzf-tab: fzf-powered interactive Tab-completion menu. No brew formula, so
 # this self-bootstraps via git clone on first run. Must load after compinit,
