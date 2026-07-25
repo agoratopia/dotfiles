@@ -10,7 +10,11 @@
 set -eu
 
 REPO=${NVIM_PORTABLE_REPO:-agoratopia/dotfiles}
-BASE=${NVIM_PORTABLE_URL:-https://github.com/$REPO/releases/latest/download}
+# The rolling tag, not /releases/latest/. CI republishes portable-latest every
+# time the Neovim config changes, so this always tracks the repo; /latest/ would
+# instead resolve to whichever release was published most recently, which a
+# pinned version tag would silently take over.
+BASE=${NVIM_PORTABLE_URL:-https://github.com/$REPO/releases/download/portable-latest}
 PREFIX=${NVIM_PORTABLE_PREFIX:-$HOME/.local}
 
 INSTALL=0

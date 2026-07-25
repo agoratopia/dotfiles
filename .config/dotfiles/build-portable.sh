@@ -33,10 +33,11 @@ done
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CONFIG_SRC="$(cd "$SCRIPT_DIR/../nvim" && pwd)"
 
-# Language servers to bake in. Only ones that are useful without the project's
-# own toolchain resolved — see lua/config/profile.lua for why gopls and
-# basedpyright are deliberately absent.
-MASON_PKGS=(yaml-language-server json-lsp marksman taplo)
+# Which language servers get baked in is NOT configured here. It is read out of
+# the config itself further down, from whatever the server profile enables — see
+# lua/plugins/lsp.lua. A list in this file would be a second source of truth in
+# a different naming scheme (lspconfig calls it yamlls, Mason calls it
+# yaml-language-server) and would quietly drift the moment either side changed.
 
 say() { printf '\033[1;34m==>\033[0m %s\n' "$*"; }
 die() { printf '\033[1;31mbuild failed:\033[0m %s\n' "$*" >&2; exit 1; }
@@ -142,6 +143,25 @@ NO_CONFIRM='lua local a=vim.pack.add; vim.pack.add=function(s,o) return a(s, vim
 
 run_nvim() { "$NVIM" --headless --cmd "$NO_CONFIRM" "$@" +qa </dev/null; }
 
+# --- Drift guard -------------------------------------------------------------
+# Modules that defer vim.pack.add until first keypress only reach the bundle if
+# they call config.pack.prefetch(). Nothing forces that at runtime, so adding a
+# new lazy-loaded plugin would ship a bundle that looks fine and then fails the
+# first time you press the key, on a machine with no network to recover from it.
+#
+# Every deferred module in this config marks itself with `local loaded = false`,
+# so check that each one either prefetches or is deliberately absent from the
+# server profile (see init.lua).
+SERVER_EXCLUDED="dap neotest"
+for f in "$CONFIG_SRC"/lua/plugins/*.lua; do
+  grep -q 'local loaded = false' "$f" || continue
+  base="$(basename "$f" .lua)"
+  case " $SERVER_EXCLUDED " in *" $base "*) continue ;; esac
+  grep -q 'prefetch(' "$f" || die "$base defers loading but never calls config.pack.prefetch() —
+  it would be missing from the bundle. Add the prefetch call, or exclude the
+  module from the server profile in init.lua and list it in SERVER_EXCLUDED."
+done
+
 # --- Plugins -----------------------------------------------------------------
 say "Installing plugins..."
 run_nvim 2>&1 | sed 's/^/    /'
@@ -161,18 +181,44 @@ done
 say "  $PLUGIN_COUNT plugins"
 
 # --- Language servers --------------------------------------------------------
-# Poll rather than trust :MasonInstall's exit, so a server that fails to
-# download fails the build instead of shipping a bundle that half works.
-say "Installing language servers: ${MASON_PKGS[*]}"
+# Which servers get baked in is read out of the config, not listed here: take
+# whatever the server profile enabled in lua/plugins/lsp.lua and translate it to
+# Mason package names with mason-lspconfig's own mapping. Editing that table is
+# therefore all it takes to change what the bundle ships.
+#
+# The refresh has to come first. That mapping is generated from the Mason
+# registry, so before the registry is fetched it is not merely stale, it is
+# empty — and an empty mapping yields an empty package list rather than an
+# error, which is how this silently produced a bundle with no servers at all.
+SERVERS_FILE="$STAGE/servers.txt"
+say "Installing language servers (derived from lsp.lua)..."
 run_nvim -c "lua
-  local want = vim.split('${MASON_PKGS[*]}', ' ')
   local reg = require('mason-registry')
   local refreshed = false
   reg.refresh(function() refreshed = true end)
-  vim.wait(120000, function() return refreshed end, 100)
-  -- pcall because a Node deprecation warning on stderr makes :MasonInstall
-  -- look like it failed when it did not. The poll below is what actually
-  -- decides whether this step succeeded.
+  if not vim.wait(120000, function() return refreshed end, 100) then
+    io.stderr:write('mason registry refresh timed out\n')
+    vim.cmd('cquit 1')
+  end
+
+  local map = require('mason-lspconfig').get_mappings().lspconfig_to_package
+  local enabled = vim.lsp._enabled_configs or {}
+  local want = {}
+  for name in pairs(enabled) do
+    if map[name] then want[#want + 1] = map[name] end
+  end
+  table.sort(want)
+
+  if #want == 0 then
+    io.stderr:write(('derived no servers: %d enabled [%s], %d mapping entries\n')
+      :format(vim.tbl_count(enabled), table.concat(vim.tbl_keys(enabled), ','), vim.tbl_count(map)))
+    vim.cmd('cquit 1')
+  end
+  vim.fn.writefile(want, '$SERVERS_FILE')
+  io.stderr:write('installing: ' .. table.concat(want, ' ') .. '\n')
+
+  -- pcall because a Node deprecation warning on stderr makes :MasonInstall look
+  -- like it failed when it did not. The poll below is what decides.
   pcall(vim.cmd, 'MasonInstall ' .. table.concat(want, ' '))
   local ok = vim.wait(900000, function()
     for _, n in ipairs(want) do
@@ -188,9 +234,12 @@ run_nvim -c "lua
   end
 " 2>&1 | sed 's/^/    /'
 
+[ -s "$SERVERS_FILE" ] || die "no language servers were derived from the config"
+mapfile -t MASON_PKGS <"$SERVERS_FILE"
 for p in "${MASON_PKGS[@]}"; do
   [ -d "$ROOT/data/nvim/mason/packages/$p" ] || die "language server missing after install: $p"
 done
+say "  ${MASON_PKGS[*]}"
 
 # --- Treesitter parsers ------------------------------------------------------
 # nvim-treesitter's main branch compiles from source, which is exactly what the
@@ -307,6 +356,7 @@ node:      $NODE_VER
 plugins:   $PLUGIN_COUNT
 parsers:   $PARSER_COUNT
 servers:   ${MASON_PKGS[*]}
+config:    $(cd "$CONFIG_SRC" && git rev-parse --short HEAD 2>/dev/null || echo "not a git checkout")
 glibc-min: $(glibc_floor "$ROOT/nvim/bin/nvim" "$ROOT/bin/node")
 EOF
 cat "$ROOT/BUILD-INFO"

@@ -171,7 +171,7 @@ leaves nothing behind.
 
 ```sh
 # Run it once and leave no trace
-curl -fsSL https://github.com/agoratopia/dotfiles/releases/latest/download/nvim-go.sh | sh
+curl -fsSL https://github.com/agoratopia/dotfiles/releases/download/portable-latest/nvim-go.sh | sh
 
 # ...on a particular file
 curl -fsSL .../nvim-go.sh | sh -s -- /etc/nginx/nginx.conf
@@ -180,11 +180,21 @@ curl -fsSL .../nvim-go.sh | sh -s -- /etc/nginx/nginx.conf
 curl -fsSL .../nvim-go.sh | sh -s -- --install   # -> ~/.local/bin/nvim-portable
 ```
 
+`portable-latest` is a rolling release that CI replaces whenever the Neovim
+config changes, rather than `/releases/latest/`, which would point at whichever
+release was published most recently — a pinned version tag would take it over.
+
 Ephemeral is the default because Neovim records the path of every file you open
 in its shada file, and writes undo history alongside it. The launcher points
 all of that at a temp directory and deletes it on exit, so none of it outlives
 the session on someone else's machine. `--install` keeps it instead, under
 `~/.local/state/nvim-portable`, which is what you want on your own boxes.
+
+**Which mode to use.** The ephemeral one-liner downloads ~100MB and throws it
+away every time you quit, so it's for a box you're touching once. Anywhere
+you'll come back to, use `--install`: it downloads once and you then just run
+`nvim-portable`, with undo history and marks persisting between sessions.
+Re-run with `--install` to update it.
 
 ### What's different about the server profile
 
@@ -206,6 +216,37 @@ the clipboard to OSC 52, which tunnels the copy through the terminal itself, so
 `"+y` reaches the machine in front of you. Pasting back needs the terminal to
 answer an OSC 52 query and many refuse to, for good security reasons — use your
 terminal's own paste when it doesn't.
+
+### Keeping the bundle from drifting
+
+The bundle is built from `.config/nvim/` in this repo, and there is deliberately
+nothing to keep in sync by hand:
+
+- **Editing the config republishes the bundle.** CI rebuilds on any push to
+  `main` that touches `.config/nvim/**` or the build scripts, and replaces the
+  rolling `portable-latest` release — which is exactly what `nvim-go.sh`
+  downloads. Change the config, push, and the next `curl | sh` on a server has
+  it. An `--install`ed copy is updated by re-running with `--install`.
+- **No duplicated lists.** The language servers come from whatever the server
+  profile enables in `lua/plugins/lsp.lua`, translated to Mason package names by
+  mason-lspconfig's own mapping. The treesitter parsers come from
+  `lua/config/parsers.lua`, the same module the live config reads. Neither is
+  restated in the build script.
+- **The build fails rather than shipping something stale.** It refuses if a
+  parser is missing by name, if a language server didn't install, or if a
+  plugin the server profile excludes turns up anyway.
+- **Lazy-loaded plugins are caught.** Anything deferring `vim.pack.add` until
+  first keypress has to call `config.pack.prefetch()` or it won't be in the
+  bundle — and would then fail on a machine with no network to fetch it. The
+  build greps for the deferral pattern and refuses to proceed if a module
+  defers without prefetching.
+- **Every bundle records what it came from.** `BUILD-INFO` inside the tarball
+  carries the config commit, Neovim and Node versions, and the plugin, parser
+  and server counts.
+
+The one thing that isn't automatic: adding a *new* language server to the
+server profile means editing the `servers` table in `lua/plugins/lsp.lua` under
+the `profile.server` branch. The build follows whatever is there.
 
 ### What's actually verified
 

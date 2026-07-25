@@ -7,13 +7,22 @@ name: Build portable Neovim
 # compiles treesitter parsers from source, and emulated toolchains have already
 # proven slow and unreliable for this repo.
 
+# Rebuilds whenever the Neovim config changes, so the published bundle can't
+# drift from the config in this repo. The result is republished under the
+# rolling `portable-latest` tag, which is what nvim-go.sh downloads — edit the
+# config, push, and the next `curl | sh` on a server picks it up.
 on:
   push:
-    tags: ['portable-v*']
+    branches: [main]
+    paths:
+      - '.config/nvim/**'
+      - '.config/dotfiles/build-portable.sh'
+      - '.config/dotfiles/nvim-go.sh'
+      - '.github/workflows/build-portable.yml'
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Release tag to publish (e.g. portable-v1). Leave blank to build without releasing.'
+        description: 'Publish under this tag instead of portable-latest (e.g. portable-v1, to pin a known-good build).'
         required: false
         type: string
 
@@ -58,8 +67,6 @@ jobs:
   release:
     needs: build
     runs-on: ubuntu-latest
-    # Only publish when there is a tag to publish under.
-    if: startsWith(github.ref, 'refs/tags/portable-v') || inputs.tag != ''
     steps:
       - uses: actions/checkout@v4
 
@@ -71,21 +78,33 @@ jobs:
       - name: Publish release
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG: ${{ inputs.tag || github.ref_name }}
+          TAG: ${{ inputs.tag || 'portable-latest' }}
+          ROLLING: ${{ inputs.tag == '' }}
         run: |
           set -euo pipefail
           ls -la dist
-          # nvim-go.sh is published alongside the tarballs so the one-liner in
-          # the README can curl it straight from the release.
+          # nvim-go.sh ships alongside the tarballs so the README one-liner can
+          # curl it straight out of the release.
           cp .config/dotfiles/nvim-go.sh dist/
+
+          # The rolling release is replaced rather than updated in place, so its
+          # tag always points at the commit the bundle was actually built from.
+          # A pinned version tag is only ever added to.
+          if [ "$ROLLING" = "true" ]; then
+            gh release delete "$TAG" --cleanup-tag --yes 2>/dev/null || true
+          fi
+
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release upload "$TAG" dist/* --clobber
           else
             gh release create "$TAG" dist/* \
-              --title "Portable Neovim $TAG" \
-              --notes "Self-contained Neovim for Linux servers. See the README for usage.
+              --title "Portable Neovim ($TAG)" \
+              --notes "Self-contained Neovim for Linux servers, built from \`${GITHUB_SHA:0:7}\`.
+          Rebuilt automatically whenever the Neovim config changes, so it never drifts from this repo.
 
           \`\`\`sh
-          curl -fsSL https://github.com/${{ github.repository }}/releases/latest/download/nvim-go.sh | sh
-          \`\`\`"
+          curl -fsSL https://github.com/${{ github.repository }}/releases/download/$TAG/nvim-go.sh | sh
+          \`\`\`
+
+          Requires glibc 2.34+ (Ubuntu 22.04+, Debian 12+, RHEL/Rocky 9+). See the README."
           fi
