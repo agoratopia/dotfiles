@@ -1,6 +1,0 @@
-# Ghostty only reads config from this exact macOS-bundle-ID path — it does
-# not honor ~/.config/ghostty/config (XDG_CONFIG_HOME), confirmed by testing
-# directly. Rather than track real config content at this awkward path, this
-# is just a redirect stub; the actual config lives at ~/.config/ghostty/config
-# alongside every other tool's config in this repo.
-config-file = ?~/.config/ghostty/config
