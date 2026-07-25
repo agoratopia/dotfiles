@@ -174,9 +174,15 @@ vim.api.nvim_create_autocmd('VimEnter', {
   end,
 })
 
-vim.api.nvim_create_autocmd('VimLeavePre', {
-  desc = 'Always write a local session on quit, if nvim was opened without file args',
-  callback = function()
-    if vim.fn.argc() == 0 and in_a_project_dir() then pcall(require('mini.sessions').write, 'Session.vim', { force = true }) end
-  end,
-})
+-- Not under the server profile: this writes into the working directory, and
+-- leaving a Session.vim behind in someone's /etc/nginx is not acceptable on a
+-- machine that isn't yours. Reading an existing session above stays enabled —
+-- that only ever touches a file you already put there.
+if not require('config.profile').server then
+  vim.api.nvim_create_autocmd('VimLeavePre', {
+    desc = 'Always write a local session on quit, if nvim was opened without file args',
+    callback = function()
+      if vim.fn.argc() == 0 and in_a_project_dir() then pcall(require('mini.sessions').write, 'Session.vim', { force = true }) end
+    end,
+  })
+end

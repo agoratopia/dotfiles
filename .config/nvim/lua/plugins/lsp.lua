@@ -106,6 +106,19 @@ local servers = {
   },
 }
 
+-- On a remote box, keep only the servers that can actually work there. The
+-- rest (gopls, basedpyright, rust-analyzer) resolve a project's modules and
+-- virtualenvs to be useful, and a server you SSH into has none of that — they
+-- would be several hundred megabytes of bundle doing nothing.
+if require('config.profile').server then
+  servers = {
+    yamlls = servers.yamlls,
+    jsonls = servers.jsonls,
+    taplo = servers.taplo,
+    marksman = servers.marksman,
+  }
+end
+
 vim.pack.add {
   gh 'neovim/nvim-lspconfig',
   gh 'mason-org/mason.nvim',
@@ -119,15 +132,21 @@ require('mason').setup {}
 -- Ensure the servers above are installed, plus a few standalone formatting
 -- tools that aren't language servers.
 --    :Mason to check status / install more manually. Press `g?` for help.
-local ensure_installed = vim.tbl_keys(servers or {})
-vim.list_extend(ensure_installed, {
-  'goimports',
-  'gofumpt',
-  'yamlfmt',
-  'rust-analyzer', -- installed via Mason for rustaceanvim to auto-detect
-})
+--
+-- Skipped entirely under the server profile: the portable bundle ships these
+-- binaries pre-installed, and a client's server may have no outbound network
+-- at all. Left running there, this would stall startup on a doomed download.
+if not require('config.profile').server then
+  local ensure_installed = vim.tbl_keys(servers or {})
+  vim.list_extend(ensure_installed, {
+    'goimports',
+    'gofumpt',
+    'yamlfmt',
+    'rust-analyzer', -- installed via Mason for rustaceanvim to auto-detect
+  })
 
-require('mason-tool-installer').setup { ensure_installed = ensure_installed }
+  require('mason-tool-installer').setup { ensure_installed = ensure_installed }
+end
 
 for name, server in pairs(servers) do
   vim.lsp.config(name, server)

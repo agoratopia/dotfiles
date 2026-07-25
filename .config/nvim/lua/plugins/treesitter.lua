@@ -31,7 +31,11 @@ local parsers = {
   'vimdoc',
   'yaml',
 }
-require('nvim-treesitter').install(parsers)
+-- The portable bundle builds these parsers ahead of time and ships them, so
+-- there is nothing to install at startup. Calling install() there would try to
+-- fetch and compile on a box that may have neither network nor a C compiler.
+local server_profile = require('config.profile').server
+if not server_profile then require('nvim-treesitter').install(parsers) end
 
 ---@param buf integer
 ---@param language string
@@ -60,7 +64,10 @@ vim.api.nvim_create_autocmd('FileType', {
 
     if vim.tbl_contains(installed_parsers, language) then
       treesitter_try_attach(buf, language)
-    elseif vim.tbl_contains(available_parsers, language) then
+    elseif not server_profile and vim.tbl_contains(available_parsers, language) then
+      -- Compile-on-demand needs a C toolchain, which the server profile can't
+      -- assume. There, an unbundled filetype just falls through to whatever
+      -- Neovim's own syntax files provide.
       require('nvim-treesitter').install(language):await(function() treesitter_try_attach(buf, language) end)
     else
       treesitter_try_attach(buf, language)
