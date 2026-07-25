@@ -9,6 +9,13 @@ brew "fd"
 brew "tree-sitter-cli"
 brew "go"
 brew "rustup"
+# Runtimes Mason needs to install language servers on first nvim launch: node
+# for json-lsp and yaml-language-server, python for basedpyright, ruff and
+# debugpy. Both currently arrive as transitive dependencies of unrelated
+# formulae below (node only via bitwarden-cli), so declare them outright —
+# removing a tool you no longer use shouldn't silently break the editor.
+brew "node"
+brew "python"
 cask "font-iosevka-nerd-font"
 
 # --- Terminal ---

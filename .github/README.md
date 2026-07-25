@@ -23,6 +23,10 @@ Not tracked here: MSP tooling notes live in Obsidian, not this repo.
 
 ## Setup on a new machine
 
+On a factory-fresh Mac the first `git` command triggers the Xcode Command
+Line Tools install dialog — click through it and re-run. Everything else,
+Homebrew included, is handled by `bootstrap.sh` below.
+
 ```sh
 git clone --bare https://github.com/agoratopia/dotfiles.git "$HOME/.dotfiles"
 alias dotfiles='/usr/bin/git --git-dir=$HOME/.dotfiles --work-tree=$HOME'
@@ -30,11 +34,16 @@ dotfiles checkout
 dotfiles config --local status.showUntrackedFiles no
 ```
 
-If `checkout` fails because existing files would be overwritten, back them up and retry:
+If `checkout` fails because existing files would be overwritten, back them up
+and retry. The loop recreates each file's parent directory in the backup, so
+nested paths like `.config/nvim/init.lua` survive:
 
 ```sh
 mkdir -p ~/.dotfiles-backup
-dotfiles checkout 2>&1 | grep -E "^\s+" | awk '{print $1}' | xargs -I{} mv {} ~/.dotfiles-backup/{}
+dotfiles checkout 2>&1 | grep -E "^\s+" | awk '{print $1}' | while read -r f; do
+  mkdir -p ~/.dotfiles-backup/"$(dirname "$f")"
+  mv "$f" ~/.dotfiles-backup/"$f"
+done
 dotfiles checkout
 ```
 

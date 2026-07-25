@@ -18,17 +18,22 @@ setopt EXTENDED_HISTORY    # store timestamp + duration per entry
 # --- Aliases ---
 alias dotfiles='/usr/bin/git --git-dir=$HOME/.dotfiles --work-tree=$HOME'
 
-# Modern CLI replacements — same commands, better output, no new muscle memory
-alias ls='eza --icons --group-directories-first'
-alias cat='bat --paging=never --style=plain'
+# Modern CLI replacements — same commands, better output, no new muscle memory.
+#
+# Each is guarded on the tool existing: between checking this repo out and
+# bootstrap.sh finishing, none of these are installed yet, and an unguarded
+# alias would leave `ls` and `cat` themselves broken. Guarded, a half-set-up
+# machine just falls back to the real commands.
+(( $+commands[eza] )) && alias ls='eza --icons --group-directories-first'
+(( $+commands[bat] )) && alias cat='bat --paging=never --style=plain'
 # NOTE: ripgrep recurses and respects .gitignore by default, unlike grep —
 # usually what you want, but worth knowing if a search seems to "miss" files
 # that are gitignored/hidden.
-alias grep='rg'
+(( $+commands[rg] )) && alias grep='rg'
 
 # --- Tool integrations ---
 # man stays man, just renders through bat for syntax highlighting/paging
-export MANPAGER="sh -c 'col -bx | bat -l man -p'"
+(( $+commands[bat] )) && export MANPAGER="sh -c 'col -bx | bat -l man -p'"
 
 # lynis hardcodes lynis.log/lynis-report.dat into $HOME when not run as root
 # (no CLI flag to redirect this) — same command, just auto-tidied afterward.
@@ -40,13 +45,13 @@ lynis() {
   [[ -f "$HOME/lynis-report.dat" ]] && mv "$HOME/lynis-report.dat" "$dest/"
 }
 
-eval "$(zoxide init zsh --cmd cd)"  # cd gains fuzzy jump-to-frecent-dir, falls through to real cd for literal paths
-eval "$(fzf --zsh)"                 # enhances existing Ctrl+R (history) / Ctrl+T (file) keybindings
+(( $+commands[zoxide] )) && eval "$(zoxide init zsh --cmd cd)"  # cd gains fuzzy jump-to-frecent-dir, falls through to real cd for literal paths
+(( $+commands[fzf] ))    && eval "$(fzf --zsh)"                 # enhances existing Ctrl+R (history) / Ctrl+T (file) keybindings
 
 # --- Completion system ---
 # zsh-completions adds definitions beyond what's already in fpath; must be
 # added before compinit runs.
-fpath=(/opt/homebrew/share/zsh-completions $fpath)
+[[ -d /opt/homebrew/share/zsh-completions ]] && fpath=(/opt/homebrew/share/zsh-completions $fpath)
 
 # Cached compinit: only re-scan fpath and re-verify security once every 24h,
 # instead of on every single new shell/tab.
@@ -89,10 +94,12 @@ fi
 [[ -r "$FZF_TAB_DIR/fzf-tab.plugin.zsh" ]] && source "$FZF_TAB_DIR/fzf-tab.plugin.zsh"
 
 # Inline history-based suggestions (accept with → or End)
-source /opt/homebrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh
+[[ -r /opt/homebrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh ]] &&
+  source /opt/homebrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh
 
-eval "$(starship init zsh)"
+(( $+commands[starship] )) && eval "$(starship init zsh)"
 
 # Syntax highlighting while typing — must be sourced last, after every other
 # widget-wrapping plugin above.
-source /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+[[ -r /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ]] &&
+  source /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
