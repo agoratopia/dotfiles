@@ -63,5 +63,16 @@ brew "glow"
 # --- Microsoft 365 / Exchange Online (PowerShell) ---
 brew "powershell"
 
+# --- Containers ---
+# macOS has no Linux kernel, so the docker CLI alone can't do anything: colima
+# runs the Linux VM that provides the daemon, and `colima start` is required
+# before the first docker command after a reboot. Used here to build and test
+# the portable Neovim bundle (build-portable.sh) against real distro images.
+#
+# The VM is provisioned on demand and can be thrown away with `colima delete`
+# without uninstalling anything; the next `colima start` rebuilds it.
+brew "colima"
+brew "docker"
+
 # --- Apps ---
 cask "obsidian"
