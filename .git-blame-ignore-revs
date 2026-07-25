@@ -1,0 +1,8 @@
+# Commits that changed formatting only. Listed here so they don't show up as
+# the author of every line: GitHub reads this file automatically, and locally
+# it needs one command (see the README's setup section).
+#
+# Only add commits that changed no behaviour whatsoever.
+
+# Format all Lua with stylua, and pin the settings
+6bba9fbb2585cdc51b399c5b925229634528434f

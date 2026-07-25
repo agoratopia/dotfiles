@@ -16,6 +16,8 @@ detects the platform and installs accordingly. See
 | `.zshrc`, `.zprofile` | Shell config: history, completion system (compinit, fzf-tab, autosuggestions, syntax highlighting), starship prompt, modern CLI replacements aliased over familiar commands (`ls`→eza, `cat`→bat, `cd`→zoxide-enhanced, `grep`→rg), man pages piped through bat |
 | `.gitconfig`, `.config/git/ignore` | Git config — delta as the diff/show pager, global excludes, and an include of an untracked local file (see below) |
 | `.config/nvim/` | Neovim config — kickstart.nvim baseline, modular (`lua/config/`, `lua/plugins/`), native `vim.pack` (not lazy.nvim) |
+| `.config/nvim/.stylua.toml` | Lua formatting, pinned. conform runs stylua on save, and without this it falls back to built-in defaults that can change between releases |
+| `.git-blame-ignore-revs` | Formatting-only commits, so `git blame` skips them |
 | `.config/starship.toml` | Shell prompt, kanagawa-dragon colors |
 | `.config/ghostty/config` | Terminal config — kanagawa-dragon theme |
 | `.dotfiles-ignore` | Safety net, see below |
@@ -42,7 +44,14 @@ git clone --bare https://github.com/agoratopia/dotfiles.git "$HOME/.dotfiles"
 alias dotfiles='/usr/bin/git --git-dir=$HOME/.dotfiles --work-tree=$HOME'
 dotfiles checkout
 dotfiles config --local status.showUntrackedFiles no
+dotfiles config --local blame.ignoreRevsFile .git-blame-ignore-revs
 ```
+
+That last line makes `git blame` skip the formatting-only commits listed in
+`.git-blame-ignore-revs`, so they don't show up as the author of every Lua
+line. It's set on this repo rather than globally, because git errors out if
+the file is missing — which it would be in every other repo you work in.
+GitHub applies the file on its own, no setup needed.
 
 If `checkout` fails because existing files would be overwritten, back them up
 and retry. The loop recreates each file's parent directory in the backup, so
