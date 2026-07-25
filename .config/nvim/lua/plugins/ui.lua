@@ -4,9 +4,18 @@ local gh = require('config.pack').gh
 vim.pack.add { gh 'NMAC427/guess-indent.nvim' }
 require('guess-indent').setup {}
 
--- Git related signs in the gutter, plus utilities for managing changes
-vim.pack.add { gh 'lewis6991/gitsigns.nvim' }
-require('gitsigns').setup {
+-- Git related signs in the gutter, plus utilities for managing changes.
+--
+-- Both the load and the setup are guarded on git existing. gitsigns warns and
+-- aborts on its own without git, but it does that from its plugin/ file as
+-- well as from setup(), so skipping only setup still leaves a warning on every
+-- launch of a server that has no git. A workstation always has git, so this
+-- changes nothing there — and the build machine does too, so the plugin is
+-- still present in the portable bundle if the target happens to have git.
+local has_git = vim.fn.executable 'git' == 1
+if has_git then vim.pack.add { gh 'lewis6991/gitsigns.nvim' } end
+
+local gitsigns_opts = {
   signs = {
     add = { text = '+' }, ---@diagnostic disable-line: missing-fields
     change = { text = '~' }, ---@diagnostic disable-line: missing-fields
@@ -63,6 +72,8 @@ require('gitsigns').setup {
     map({ 'o', 'x' }, 'ih', gitsigns.select_hunk)
   end,
 }
+
+if has_git then require('gitsigns').setup(gitsigns_opts) end
 
 -- Shows pending keybinds
 vim.pack.add { gh 'folke/which-key.nvim' }

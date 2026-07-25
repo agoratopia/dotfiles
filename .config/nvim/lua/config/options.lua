@@ -29,6 +29,27 @@ vim.opt.shortmess:append 'I'
 --  Schedule the setting after `UiEnter` because it can increase startup-time.
 vim.schedule(function() vim.o.clipboard = 'unnamedplus' end)
 
+-- A server reached over SSH has no X11 or Wayland for `unnamedplus` to talk to,
+-- so yanking would silently do nothing. OSC 52 pushes the copy through the
+-- terminal's own escape sequences, which means it travels back over the SSH
+-- connection to the machine actually in front of you.
+--
+-- Set explicitly rather than relying on Neovim's own fallback, which only
+-- engages when it recognises the session as remote and otherwise leaves you
+-- with "clipboard: No provider".
+--
+-- Copy works everywhere; paste needs the terminal to answer an OSC 52 query,
+-- which many refuse to do for good security reasons. Use `"+p` if it works,
+-- and ordinary terminal paste if not.
+if require('config.profile').server then
+  local osc52 = require 'vim.ui.clipboard.osc52'
+  vim.g.clipboard = {
+    name = 'OSC 52',
+    copy = { ['+'] = osc52.copy '+', ['*'] = osc52.copy '*' },
+    paste = { ['+'] = osc52.paste '+', ['*'] = osc52.paste '*' },
+  }
+end
+
 -- Enable break indent
 vim.o.breakindent = true
 

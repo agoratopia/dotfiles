@@ -18,6 +18,8 @@ local function toggle(cmd)
   end
 end
 
+require('config.pack').prefetch(ensure_loaded)
+
 vim.keymap.set('n', '<leader>xx', toggle 'Trouble diagnostics toggle', { desc = 'Diagnostics (Trouble)' })
 vim.keymap.set('n', '<leader>xX', toggle 'Trouble diagnostics toggle filter.buf=0', { desc = 'Buffer Diagnostics (Trouble)' })
 vim.keymap.set('n', '<leader>xl', toggle 'Trouble loclist toggle', { desc = 'Location List (Trouble)' })

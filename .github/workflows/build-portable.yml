@@ -1,0 +1,91 @@
+name: Build portable Neovim
+
+# Produces the self-contained Neovim bundle documented in the README, for
+# dropping onto a Linux server over SSH.
+#
+# Both architectures build natively rather than one under QEMU: this bundle
+# compiles treesitter parsers from source, and emulated toolchains have already
+# proven slow and unreliable for this repo.
+
+on:
+  push:
+    tags: ['portable-v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag to publish (e.g. portable-v1). Leave blank to build without releasing.'
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-latest
+            arch: x86_64
+          - runner: ubuntu-24.04-arm
+            arch: arm64
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+
+      # The runners already ship git, curl, jq, node and npm; these are the
+      # ones that are not guaranteed.
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq build-essential xz-utils binutils
+
+      - name: Build
+        run: .config/dotfiles/build-portable.sh --out dist
+
+      - name: Show what was built
+        run: |
+          ls -la dist
+          tar xzf dist/nvim-portable-${{ matrix.arch }}.tar.gz -O nvim-portable/BUILD-INFO
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nvim-portable-${{ matrix.arch }}
+          path: dist/nvim-portable-${{ matrix.arch }}.tar.gz
+          if-no-files-found: error
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    # Only publish when there is a tag to publish under.
+    if: startsWith(github.ref, 'refs/tags/portable-v') || inputs.tag != ''
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          set -euo pipefail
+          ls -la dist
+          # nvim-go.sh is published alongside the tarballs so the one-liner in
+          # the README can curl it straight from the release.
+          cp .config/dotfiles/nvim-go.sh dist/
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" dist/* --clobber
+          else
+            gh release create "$TAG" dist/* \
+              --title "Portable Neovim $TAG" \
+              --notes "Self-contained Neovim for Linux servers. See the README for usage.
+
+          \`\`\`sh
+          curl -fsSL https://github.com/${{ github.repository }}/releases/latest/download/nvim-go.sh | sh
+          \`\`\`"
+          fi

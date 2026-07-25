@@ -22,6 +22,8 @@ detects the platform and installs accordingly. See
 | `.config/dotfiles/Brewfile` | Every Homebrew formula/cask this environment needs (macOS) |
 | `.config/dotfiles/packages.linux` | The Linux equivalent — one table mapping each tool to its apt/dnf/pacman package name |
 | `.config/dotfiles/bootstrap.sh` | Sets up a fresh machine end to end on any supported platform, see below |
+| `.config/dotfiles/build-portable.sh` | Builds the self-contained Neovim bundle for remote servers, see below |
+| `.config/dotfiles/nvim-go.sh` | One-liner that fetches and runs that bundle on a box you've SSHed into |
 
 Theme is kanagawa-dragon end to end — Ghostty, Neovim, and starship all match.
 
@@ -155,6 +157,107 @@ the only pieces not proven on Arch. And WSL is covered only by its detection
 logic (both `/proc/version` and `$WSL_DISTRO_NAME`, confirmed not to
 false-positive on plain Linux); the rest follows its distro's path, which is
 tested, but no real WSL install has run this.
+
+## Portable Neovim for servers you SSH into
+
+Running `bootstrap.sh` on a box makes sense when it's yours. On a client's
+server it doesn't: it installs packages, needs sudo, and leaves a home
+directory full of things that weren't there before.
+
+So there's a second artifact — a single tarball containing Neovim, this config,
+and every plugin, language server and treesitter parser already built. It needs
+no root, no package manager, no compiler and no network, and by default it
+leaves nothing behind.
+
+```sh
+# Run it once and leave no trace
+curl -fsSL https://github.com/agoratopia/dotfiles/releases/latest/download/nvim-go.sh | sh
+
+# ...on a particular file
+curl -fsSL .../nvim-go.sh | sh -s -- /etc/nginx/nginx.conf
+
+# Or keep it, on a machine you own
+curl -fsSL .../nvim-go.sh | sh -s -- --install   # -> ~/.local/bin/nvim-portable
+```
+
+Ephemeral is the default because Neovim records the path of every file you open
+in its shada file, and writes undo history alongside it. The launcher points
+all of that at a temp directory and deletes it on exit, so none of it outlives
+the session on someone else's machine. `--install` keeps it instead, under
+`~/.local/state/nvim-portable`, which is what you want on your own boxes.
+
+### What's different about the server profile
+
+The bundle runs the same config under `NVIM_PROFILE=server` (see
+`lua/config/profile.lua`). Six things change, each because the workstation
+behaviour is actively wrong on a machine that isn't yours:
+
+| | Why |
+|---|---|
+| No Mason or treesitter installs at runtime | Everything is prebuilt. A client's server may have no egress, and certainly has no compiler. |
+| No dap, neotest or rustaceanvim | These need the project's own toolchain resolved locally. |
+| Only yaml, json, toml and markdown servers | gopls and basedpyright need modules and virtualenvs a remote box doesn't have — and they're 320MB of the 804MB Mason tree. |
+| No format-on-save | Turning a one-line fix to someone else's config into a whole-file reformat is rude and unreviewable. `<leader>f` still works. |
+| No session writing | It writes `Session.vim` into the working directory, i.e. into their `/etc/nginx`. |
+| Ships its own Node | Mason's yaml and json servers are `#!/usr/bin/env node` scripts and Mason bundles no runtime, so without this the two most useful servers silently fail to start. |
+
+Copying works over SSH: with no X11 or Wayland to talk to, the profile switches
+the clipboard to OSC 52, which tunnels the copy through the terminal itself, so
+`"+y` reaches the machine in front of you. Pasting back needs the terminal to
+answer an OSC 52 query and many refuse to, for good security reasons — use your
+terminal's own paste when it doesn't.
+
+### What's actually verified
+
+The bundle was exercised from a clean image with `--network none`, as a non-root
+user, with the bundle directory mode 555 and no `git`, `node`, `cc` or `nvim` on
+the machine:
+
+| Check | Result |
+|---|---|
+| Launches offline, unprivileged, read-only | ✅ |
+| yamlls attaches to a `.yaml` buffer | ✅ with no network |
+| Treesitter parsers load | ✅ 6/6 sampled, no compiler present |
+| Server profile active | ✅ 4 language servers, format-on-save off |
+| OSC 52 copy reaches the terminal | ✅ verified through a real pty |
+| Writes nothing to `$HOME` | ✅ |
+| Ephemeral state directory removed on exit | ✅ |
+| `nvim-go.sh`, both modes | ✅ install, ephemeral, and the no-tty refusal |
+
+macOS is unaffected: an interleaved A/B of 25 runs each against the pre-change
+config puts them within noise of each other (p50 50.3ms after vs 50.4ms before),
+and the two new modules cost 0.163ms combined.
+
+### Requirements, and the one real limitation
+
+**glibc 2.34.** This is inherited from Neovim's own official release build, not
+from anything here, and it's the binding constraint:
+
+| Works | Does not |
+|---|---|
+| Ubuntu 22.04+, Debian 12+, RHEL/Rocky/Alma 9+, Fedora 35+ | Ubuntu 20.04, Debian 11, RHEL/CentOS 8 and older |
+
+Confirmed by running it: Debian 12 (glibc 2.36) and Rocky 9 (2.34, the exact
+boundary) both launch; Ubuntu 20.04 (2.31) fails immediately with
+`version 'GLIBC_2.33' not found`. The bundled Node is not the constraint — it
+only needs 2.28.
+
+There's no easy way around it. The AppImage Neovim also publishes is built from
+the same binary, so it carries the same floor and adds a FUSE dependency.
+Reaching older boxes would mean building Neovim from source against an older
+glibc, or falling back to a container on those specific machines.
+
+### Building it
+
+CI does this on tag push (`.github/workflows/build-portable.yml`), building
+each architecture on its own native runner — this compiles treesitter parsers
+from source, and emulated toolchains have already proven unreliable for this
+repo. To build one by hand:
+
+```sh
+docker run --rm -v "$HOME:/src:ro" -v "$PWD/dist:/dist" ubuntu:24.04 \
+  bash -c 'apt-get update -qq && apt-get install -y -qq curl git build-essential jq xz-utils binutils nodejs npm && /src/.config/dotfiles/build-portable.sh --out /dist'
+```
 
 ## Keeping private settings out of a public `.gitconfig`
 

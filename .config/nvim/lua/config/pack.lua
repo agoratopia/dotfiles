@@ -44,4 +44,17 @@ vim.api.nvim_create_autocmd('PackChanged', {
   end,
 })
 
-return { gh = gh }
+---Build-time hook for modules that defer `vim.pack.add` until first use.
+---
+---Lazy loading is right on a workstation, but the portable bundle
+---(build-portable.sh) has to contain every plugin up front — on the target
+---machine there may be no network to fetch a missing one, and the first
+---keypress that needs it would just fail. Setting NVIM_PREFETCH=1 during the
+---build forces those modules to load so their plugins get baked in. Nothing
+---sets it at normal runtime, so lazy loading is unaffected.
+---@param ensure_loaded fun()
+local function prefetch(ensure_loaded)
+  if vim.env.NVIM_PREFETCH == '1' then ensure_loaded() end
+end
+
+return { gh = gh, prefetch = prefetch }

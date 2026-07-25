@@ -11,6 +11,8 @@ local function ensure_loaded()
   require('diffview').setup {}
 end
 
+require('config.pack').prefetch(ensure_loaded)
+
 vim.keymap.set('n', '<leader>gd', function()
   ensure_loaded()
   vim.cmd.DiffviewOpen()
