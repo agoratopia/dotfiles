@@ -69,9 +69,24 @@ unset _zcompdump_fresh
 # fzf-tab: fzf-powered interactive Tab-completion menu. No brew formula, so
 # this self-bootstraps via git clone on first run. Must load after compinit,
 # before any widget-wrapping plugin (autosuggestions/syntax-highlighting).
+#
+# Pinned to an explicit commit: this is the only third-party code that
+# auto-executes in every shell, and an unpinned clone means each machine gets
+# whatever master happened to be that day. 24105b1 is three fixes past the
+# v1.3.0 tag and is the revision this environment was built against — bump it
+# deliberately, not by accident.
 FZF_TAB_DIR="$HOME/.local/share/zsh/plugins/fzf-tab"
-[[ -d "$FZF_TAB_DIR" ]] || git clone --quiet https://github.com/Aloxaf/fzf-tab "$FZF_TAB_DIR"
-source "$FZF_TAB_DIR/fzf-tab.plugin.zsh"
+FZF_TAB_REV="24105b15714bfec37989ed5c5b6e60f572253019"
+if [[ ! -d "$FZF_TAB_DIR" ]]; then
+  if git clone --quiet https://github.com/Aloxaf/fzf-tab "$FZF_TAB_DIR"; then
+    git -C "$FZF_TAB_DIR" checkout --quiet "$FZF_TAB_REV"
+  else
+    print -u2 "fzf-tab: clone failed — Tab completion falls back to zsh's default"
+  fi
+fi
+# Guarded so a failed or partial clone doesn't throw an error in every shell
+# from here on; you just lose the fancy completion menu until it's fixed.
+[[ -r "$FZF_TAB_DIR/fzf-tab.plugin.zsh" ]] && source "$FZF_TAB_DIR/fzf-tab.plugin.zsh"
 
 # Inline history-based suggestions (accept with → or End)
 source /opt/homebrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh
