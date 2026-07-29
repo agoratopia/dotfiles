@@ -179,8 +179,8 @@ tested, but no real WSL install has run this.
 
 ## Portable Neovim for servers you SSH into
 
-Running `bootstrap.sh` on a box makes sense when it's yours. On a client's
-server it doesn't: it installs packages, needs sudo, and leaves a home
+Running `bootstrap.sh` on a box makes sense when it's yours. On a server that
+isn't, it doesn't: it installs packages, needs sudo, and leaves a home
 directory full of things that weren't there before.
 
 So there's a second artifact — a single tarball containing Neovim, this config,
@@ -334,7 +334,7 @@ So the last thing `.gitconfig` does is include an untracked file:
 ```
 
 Git skips the include silently if the file is absent, and values there
-override everything above it. Work identity, signing keys, and per-client
+override everything above it. Work identity, signing keys, and scoped
 `includeIf` rules go there and never reach the repo.
 
 ## Why this file lives in `.github/`
