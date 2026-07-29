@@ -29,8 +29,6 @@ detects the platform and installs accordingly. See
 
 Theme is kanagawa-dragon end to end — Ghostty, Neovim, and starship all match.
 
-Not tracked here: MSP tooling notes live in Obsidian, not this repo.
-
 ## Setup on a new machine
 
 The only prerequisite is `git` itself. On a factory-fresh Mac the first `git`
@@ -225,7 +223,7 @@ behaviour is actively wrong on a machine that isn't yours:
 
 | | Why |
 |---|---|
-| No Mason or treesitter installs at runtime | Everything is prebuilt. A client's server may have no egress, and certainly has no compiler. |
+| No Mason or treesitter installs at runtime | Everything is prebuilt. A remote server may have no egress, and certainly has no compiler. |
 | No dap, neotest or rustaceanvim | These need the project's own toolchain resolved locally. |
 | Only yaml, json, toml and markdown servers | gopls and basedpyright need modules and virtualenvs a remote box doesn't have — and they're 320MB of the 804MB Mason tree. |
 | No format-on-save | Turning a one-line fix to someone else's config into a whole-file reformat is rude and unreviewable. `<leader>f` still works. |

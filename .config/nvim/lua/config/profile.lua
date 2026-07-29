@@ -9,7 +9,7 @@
 -- misbehaves there rather than just saving space:
 --
 --   * No Mason/treesitter installs at runtime. The bundle ships its own
---     binaries and parsers pre-built; a client's server may have no egress and
+--     binaries and parsers pre-built; a remote server may have no egress and
 --     almost certainly has no C compiler.
 --   * No debugger, test-runner or Rust tooling. Those need the project's
 --     toolchain resolved locally, which a remote box doesn't have.

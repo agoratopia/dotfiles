@@ -141,7 +141,7 @@ require("mason").setup({})
 --    :Mason to check status / install more manually. Press `g?` for help.
 --
 -- Skipped entirely under the server profile: the portable bundle ships these
--- binaries pre-installed, and a client's server may have no outbound network
+-- binaries pre-installed, and a remote server may have no outbound network
 -- at all. Left running there, this would stall startup on a doomed download.
 if not require("config.profile").server then
 	local ensure_installed = vim.tbl_keys(servers or {})
