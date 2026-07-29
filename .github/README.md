@@ -121,7 +121,12 @@ silently fall back to slower defaults.
 **A few tools have no distro package** and are installed directly: rustup and
 starship from their official installers, and nuclei, glow and yq via
 `go install`. That compile step is the slow part of a Linux bootstrap — budget
-several minutes.
+several minutes. The tree-sitter CLI joins them for a different reason: the
+package exists nearly everywhere, but nvim-treesitter needs 0.26.1 or newer and
+only Arch ships that, so bootstrap checks the version on `PATH` and pulls npm's
+prebuilt binary into `~/.local` when it falls short. Without it nvim-treesitter
+cannot build a single parser — its main branch shells out to the CLI, so a C
+compiler on its own no longer buys you anything.
 
 **Not everything exists on every distro.** Bootstrap asks the package manager
 what it actually has before installing, so a missing package never fails the
@@ -150,7 +155,7 @@ launch — not a dry run.
 | Platform | bootstrap | shell | Neovim | Notes |
 |---|---|---|---|---|
 | macOS (Apple Silicon) | daily driver | ✅ | ✅ | the primary environment |
-| Ubuntu 24.04 | ✅ | ✅ | 0.12.4, 38 plugins | |
+| Ubuntu 24.04 | ✅ | ✅ | 0.12.4, 38 plugins, 23/23 parsers | |
 | Debian 13 | ✅ | ✅ | 0.12.4, 38 plugins | `nikto` no longer packaged |
 | Fedora 44 | ✅ | ✅ | 0.12.4, 38 plugins | needs versioned Node streams |
 | Arch | ✅ | ✅ | 0.12.4, 38 plugins | see caveat below |
@@ -158,6 +163,13 @@ launch — not a dry run.
 
 Re-running is genuinely a no-op: a second bootstrap on Ubuntu took 17s against
 284s for the first, with zero reinstall attempts.
+
+Count the parsers, not just the plugins. Neovim bundles seven of its own, and
+`lua/config/parsers.lua` asks for all seven, so a Neovim that can build nothing
+at all still opens, still reports 38 plugins, and still highlights the Lua files
+you would think to check. Only the count gives it away — 7 against 23. That is
+exactly how the missing tree-sitter CLI went unnoticed, so the Ubuntu row above
+carries the count and the rest are due a re-run.
 
 Two honest caveats. Arch has no arm64 image, so it was tested under x86
 emulation; there, `go install` segfaults inside Go's own module code — a

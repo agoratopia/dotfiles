@@ -208,6 +208,33 @@ if [ "$PLATFORM" = "linux" ]; then
     fi
   fi
 
+  # The tree-sitter CLI is what nvim-treesitter's main branch shells out to in
+  # order to build a parser, and its health check hard-fails below 0.26.1.
+  # packages.linux only lists it for pacman because every other distro's build
+  # is older than that (see the note there), so check what is actually on PATH
+  # rather than assuming the package step covered it. npm's build is prebuilt
+  # and current; --prefix keeps it in ~/.local, which needs no sudo and comes
+  # first on PATH, so it also wins over an older CLI installed some other way.
+  TS_MIN="0.26.1"
+  ts_have=""
+  if command -v tree-sitter >/dev/null 2>&1; then
+    # -n with p, so output that carries no version number yields nothing at all
+    # rather than passing itself off as one to sort -V below.
+    ts_have="$(tree-sitter --version 2>/dev/null | head -1 | sed -nE 's/^[^0-9]*([0-9]+(\.[0-9]+)*).*/\1/p')"
+  fi
+  # sort -V puts the lower version first; if that is still TS_MIN, what we have
+  # is new enough. An unparseable or empty version falls through to installing.
+  if [ -z "$ts_have" ] || \
+     [ "$(printf '%s\n%s\n' "$TS_MIN" "$ts_have" | sort -V | head -1)" != "$TS_MIN" ]; then
+    if command -v npm >/dev/null 2>&1; then
+      echo "==> Installing the tree-sitter CLI (nvim-treesitter needs >= $TS_MIN)..."
+      npm install -g --silent --no-fund --no-audit --prefix "$HOME/.local" tree-sitter-cli >/dev/null 2>&1 \
+        || note "tree-sitter-cli install failed — nvim-treesitter cannot build any parser without it"
+    else
+      note "npm missing, so tree-sitter-cli was not installed — nvim-treesitter cannot build any parser"
+    fi
+  fi
+
   # Not reliably packaged on Linux — each has its own official installer.
   if ! command -v rustup >/dev/null 2>&1; then
     echo "==> Installing rustup..."
